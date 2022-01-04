@@ -17,6 +17,7 @@ GitHub gitHub = new GitHub(this, 'jenkinsci/nexus-platform-plugin', apiToken)
 
 node('ubuntu-zion') {
   def commitId, commitDate, pom, version, mvnReleaseCommand, mvnDeployCommand, releaseNotes, branch
+  def testVersion = '3.13.20211221-143401.603ba12'
 
   try {
     stage('Preparation') {
@@ -112,7 +113,7 @@ node('ubuntu-zion') {
     echo 'Deploy to Jenkins.io'
   }
   stage('Check plugin deployment') {
-    checkPublishedPlugin(version)
+    checkPublishedPlugin(testVersion)
   }
 }
 
