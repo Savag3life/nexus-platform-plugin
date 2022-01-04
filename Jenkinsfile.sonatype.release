@@ -33,7 +33,7 @@ node('ubuntu-zion') {
       commitDate = runSafely("git show -s --format=%cd --date=format:%Y%m%d-%H%M%S ${commitId}", true)
       version = pom.version.replace("-SNAPSHOT", ".${commitDate}.${commitId.substring(0, 7)}")
       releaseNotes = params.releaseNotes
-      branch = 'main'
+      branch = 'test-new-release-process'
 
       // Setup maven commands
       mvnReleaseCommand = "-Darguments=-DskipTests -DreleaseVersion=${version} -DdevelopmentVersion=${pom.version} " +
@@ -50,14 +50,17 @@ node('ubuntu-zion') {
       licenseCheck(jenkinsMavenConfig())
     }
     stage('Build') {
-      mvn jenkinsMavenConfig(), 'clean package'
+      //mvn jenkinsMavenConfig(), 'clean package'
+      echo 'Build'
     }
     stage('Nexus Lifecycle Analysis') {
-      iqPolicyEvaluation(gitHub, 'release')
+      //iqPolicyEvaluation(gitHub, 'release')
+      echo 'Nexus Lifecycle Analysis'
     }
     stage('Archive Results') {
-      junit '**/target/surefire-reports/TEST-*.xml'
-      archive 'target/*.hpi'
+      //junit '**/target/surefire-reports/TEST-*.xml'
+      //archive 'target/*.hpi'
+      echo 'Archive Results'
     }
   }
   finally {
@@ -67,16 +70,17 @@ node('ubuntu-zion') {
   if (currentBuild.result == 'FAILURE') {
     return
   }
-  if (scm.branches[0].name != '*/main') {
+  if (scm.branches[0].name != "*/${branch}") {
     return
   }
   stage('Update changelogs') {
     updateChangeLogs(releaseNotes, version)
   }
   stage('Deploy to Sonatype') {
-    withGpgCredentials('gnupg') {
+    /*withGpgCredentials('gnupg') {
       mvn sonatypeMavenConfig(), mvnReleaseCommand
-    }
+    }*/
+    echo 'Deploy to Sonatype'
   }
   stage('Push code and tags') {
     // Add and commit changes
@@ -101,10 +105,11 @@ node('ubuntu-zion') {
     }
   }
   stage('Deploy to Jenkins.io') {
-    mvn jenkinsMavenConfig(), "-Dfile=target/checkout/target/nexus-jenkins-plugin.hpi " +
+    /*mvn jenkinsMavenConfig(), "-Dfile=target/checkout/target/nexus-jenkins-plugin.hpi " +
         "-DpomFile=target/checkout/pom.xml ${mvnDeployCommand}"
     mvn jenkinsMavenConfig(), "-Dfile=target/checkout/target/nexus-jenkins-plugin.jar " +
-        "-Dsources=target/checkout/target/nexus-jenkins-plugin-sources.jar ${mvnDeployCommand}"
+        "-Dsources=target/checkout/target/nexus-jenkins-plugin-sources.jar ${mvnDeployCommand}"*/
+    echo 'Deploy to Jenkins.io'
   }
   stage('Check plugin deployment') {
     checkPublishedPlugin(version)
