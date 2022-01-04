@@ -99,7 +99,7 @@ node('ubuntu-zion') {
       runSafely "git pull --no-rebase --no-edit origin ${branch}"
 
       // Push tags
-      runSafely "git push ${pom.artifactId}-${version}"
+      //runSafely "git push ${pom.artifactId}-${version}"
 
       // Push code changes
       runSafely "git push origin HEAD:${branch}"
