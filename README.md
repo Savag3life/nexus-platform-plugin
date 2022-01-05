@@ -24,6 +24,12 @@ Please use the links below to find information about using the plugin with your 
 
 Changelog
 =========
+3.13.20220105-104939.3e4f0fe (January 05, 2022)
+------------------------------------------------
+- Example notes 1
+- Example notes 2
+- Example notes 3
+
 3.13.20211220-113820.efa5a1c (December 20th, 2021)
 ------------------------------------------------
 - Conda Matching Improvements
