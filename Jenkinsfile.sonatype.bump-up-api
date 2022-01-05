@@ -47,14 +47,14 @@ node('ubuntu-zion') {
     }
   }
   stage('Run Downstream') {
-    downstreamProjectName = "extra-tests/${branch}"
+    def downstreamProjectName = "extra-tests/${branch}"
     env['DOWNSTREAM_JOB_NAME'] = downstreamProjectName
     build job: downstreamProjectName, propagate: true, wait: true,
         parameters: [string(name: 'commit_sha', value: getCommitId())]
   }
   stage('Evaluate Policies') {
     nexusPolicyEvaluation failBuildOnNetworkError: false, iqApplication: 'nexus-platform-plugin',
-        iqScanPatterns: [[scanPattern: 'scan_nothing']], iqStage: 'build', jobCredentialsId: ''
+        iqScanPatterns: [[scanPattern: 'scan_nothing']], iqStage: 'develop', jobCredentialsId: ''
   }
 }
 
