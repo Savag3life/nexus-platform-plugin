@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat
 
 String apiToken = null
 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'integrations-github-api',
-    usernameVariable: 'GITHUB_API_USERNAME', passwordVariable: 'GITHUB_API_PASSWORD']]) {
+                  usernameVariable: 'GITHUB_API_USERNAME', passwordVariable: 'GITHUB_API_PASSWORD']]) {
   apiToken = env.GITHUB_API_PASSWORD
 }
 
@@ -38,11 +38,11 @@ node('ubuntu-zion') {
 
       // Setup maven commands
       mvnReleaseCommand = "-Darguments=-DskipTests -DreleaseVersion=${version} -DdevelopmentVersion=${pom.version} " +
-          "-DpushChanges=false -DlocalCheckout=true -DpreparationGoals=initialize clean release:prepare " +
-          "release:perform -B"
-      mvnDeployCommand = "-Durl=https://repo.jenkins-ci.org/releases -DrepositoryId=maven.jenkins-ci.org " +
+          '-DpushChanges=false -DlocalCheckout=true -DpreparationGoals=initialize clean release:prepare ' +
+          'release:perform -B'
+      mvnDeployCommand = '-Durl=https://repo.jenkins-ci.org/releases -DrepositoryId=maven.jenkins-ci.org ' +
           "-DgroupId=${pom.groupId} -DartifactId=${pom.artifactId} -Dversion=${version} -DgeneratePom=false " +
-          "deploy:deploy-file -B"
+          'deploy:deploy-file -B'
 
       // Update display name
       currentBuild.displayName = "#${currentBuild.number} - ${version}"
@@ -74,8 +74,27 @@ node('ubuntu-zion') {
   if (scm.branches[0].name != "*/${branch}") {
     return
   }
-  stage('Update changelogs') {
+  stage('Update and push code') {
+    // Update change logs
     updateChangeLogs(releaseNotes, version)
+
+    // Add and commit changes
+    runSafely 'git add README.md'
+    runSafely "git commit -m 'Updating change logs for release ${version}'"
+
+    // Push changes
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'integrations-github-api',
+                      usernameVariable: 'GITHUB_API_USERNAME', passwordVariable: 'GITHUB_API_PASSWORD']]) {
+      // Setup remote url with credentials
+      runSafely "git remote set-url origin https://${env.GITHUB_API_USERNAME}:${env.GITHUB_API_PASSWORD}@github" +
+          '.com/jenkinsci/nexus-platform-plugin.git'
+
+      // Get latest commits to not have issues on push
+      runSafely "git pull --no-rebase --no-edit origin ${branch}"
+
+      // Push code changes
+      runSafely "git push origin HEAD:${branch}"
+    }
   }
   stage('Deploy to Sonatype') {
     /*withGpgCredentials('gnupg') {
@@ -83,32 +102,14 @@ node('ubuntu-zion') {
     }*/
     echo 'Deploy to Sonatype'
   }
-  stage('Push code and tags') {
-    // Add and commit changes
-    runSafely 'git add README.md'
-    runSafely "git commit -m 'Updating change logs for release ${version}'"
-
-    // Push changes
-    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'integrations-github-api',
-        usernameVariable: 'GITHUB_API_USERNAME', passwordVariable: 'GITHUB_API_PASSWORD']]) {
-      // Setup remote url with credentials
-      runSafely "git remote set-url origin https://${env.GITHUB_API_USERNAME}:${env.GITHUB_API_PASSWORD}@github" +
-                                                  ".com/jenkinsci/nexus-platform-plugin.git"
-
-      // Get latest commits to not have issues on push
-      runSafely "git pull --no-rebase --no-edit origin ${branch}"
-
-      // Push tags
-      //runSafely "git push ${pom.artifactId}-${version}"
-
-      // Push code changes
-      runSafely "git push origin HEAD:${branch}"
-    }
+  stage('Push tags') {
+    //runSafely "git push ${pom.artifactId}-${version}"
+    echo 'Push tags'
   }
   stage('Deploy to Jenkins.io') {
-    /*mvn jenkinsMavenConfig(), "-Dfile=target/checkout/target/nexus-jenkins-plugin.hpi " +
+    /*mvn jenkinsMavenConfig(), '-Dfile=target/checkout/target/nexus-jenkins-plugin.hpi ' +
         "-DpomFile=target/checkout/pom.xml ${mvnDeployCommand}"
-    mvn jenkinsMavenConfig(), "-Dfile=target/checkout/target/nexus-jenkins-plugin.jar " +
+    mvn jenkinsMavenConfig(), '-Dfile=target/checkout/target/nexus-jenkins-plugin.jar ' +
         "-Dsources=target/checkout/target/nexus-jenkins-plugin-sources.jar ${mvnDeployCommand}"*/
     echo 'Deploy to Jenkins.io'
   }
@@ -178,7 +179,7 @@ void updateChangeLogs(releaseNotes, version) {
     writeFile(file: 'README.md', text: updatedReadme)
   }
   catch (error) {
-    error "Error updating README file"
+    error 'Error updating README file'
   }
 }
 
@@ -193,8 +194,8 @@ ${releaseNotes}
 
 String getFormattedCommitDate() {
   commitDate = runSafely("git show -s --format=%cd --date=format:%Y-%m-%d ${commitId}", true)
-  date = new SimpleDateFormat("yyyy-MM-dd").parse(commitDate)
-  return new SimpleDateFormat("MMMM dd, yyyy").format(date)
+  date = new SimpleDateFormat('yyyy-MM-dd').parse(commitDate)
+  return new SimpleDateFormat('MMMM dd, yyyy').format(date)
 }
 
 void checkPublishedPlugin(version) {
